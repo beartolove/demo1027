@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>工作性質及質量分析｜待辦事項儀表板</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <style>
+    :root { --navy:#13283f; --ink:#263746; --muted:#6f7f8d; --paper:#f5f7f8; --line:#e1e7eb; --teal:#0d8b8a; --orange:#ee8b43; --blue:#3c78c4; --red:#dc5a5a; --card:#fff; }
+    * { box-sizing:border-box; } body { margin:0; font-family:"Microsoft JhengHei","Noto Sans TC",Arial,sans-serif; color:var(--ink); background:var(--paper); }
+    .hero { background:linear-gradient(115deg,#112a43,#16566b); color:white; padding:34px clamp(20px,5vw,78px) 30px; }
+    .eyebrow { color:#9ee4df; font-size:.82rem; letter-spacing:.15em; font-weight:700; } h1 { margin:8px 0 7px; font-size:clamp(1.65rem,3vw,2.35rem); } .hero p { margin:0; opacity:.88; }
+    .upload { max-width:1180px; margin:24px auto 0; padding:0 22px; } .drop { background:#fff; border:2px dashed #9eb8c3; border-radius:14px; padding:18px 22px; display:flex; align-items:center; justify-content:space-between; gap:15px; box-shadow:0 5px 16px #1934490b; transition:.18s ease; } .drop.dragover { border-color:var(--teal); background:#effbfa; transform:translateY(-1px); }
+    .drop strong { display:block; margin-bottom:4px; } .drop span { font-size:.87rem; color:var(--muted); } input[type=file] { display:none; } .button { display:inline-flex; align-items:center; justify-content:center; padding:10px 16px; border:0; border-radius:8px; background:var(--teal); color:white; cursor:pointer; font:inherit; font-weight:700; white-space:nowrap; } .button:hover { background:#087171; }
+    .file-tools { max-width:1180px; margin:12px auto 0; padding:0 22px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; } .status { min-height:22px; color:var(--muted); font-size:.9rem; flex:1; } .scope { border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:#fff; color:var(--ink); font:inherit; max-width:310px; } .file-list { max-width:1180px; margin:0 auto; padding:0 22px; display:flex; flex-wrap:wrap; gap:7px; } .file-chip { display:inline-flex; align-items:center; gap:7px; background:#e8f6f4; color:#176664; border-radius:999px; padding:6px 9px 6px 11px; font-size:.82rem; } .file-chip button { border:0; background:transparent; color:#176664; cursor:pointer; font-size:1.05rem; line-height:1; padding:0; }
+    main { max-width:1180px; margin:0 auto; padding:8px 22px 46px; } .tabs { display:flex; gap:6px; overflow:auto; border-bottom:1px solid var(--line); margin-top:12px; } .tab { border:0; padding:13px 17px; background:none; color:var(--muted); font:inherit; font-weight:700; cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap; } .tab.active { color:var(--teal); border-color:var(--teal); }
+    .panel { display:none; padding-top:22px; } .panel.active { display:block; } .intro { color:var(--muted); margin:0 0 15px; font-size:.93rem; } .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:14px; } .kpi { background:var(--card); padding:16px; min-height:104px; border-radius:12px; border:1px solid var(--line); box-shadow:0 4px 12px #112a4309; } .kpi b { display:block; color:var(--muted); font-size:.8rem; font-weight:700; margin-bottom:9px; } .kpi strong { font-size:1.65rem; color:var(--navy); } .kpi small { color:var(--muted); font-size:.82rem; margin-left:3px; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; } .chart-card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:15px 15px 7px; min-width:0; } .chart-card.wide { grid-column:1/-1; } .chart-title { margin:0; font-size:1rem; } .chart-note { font-size:.81rem; color:var(--muted); margin:5px 0 0; min-height:18px; } .drillbar { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:9px 0 0; } .breadcrumb { color:#176664; font-size:.82rem; font-weight:700; } .back-button { border:1px solid #9ccfca; border-radius:7px; padding:6px 9px; color:#176664; background:#fff; cursor:pointer; font:inherit; font-size:.8rem; font-weight:700; } .back-button:disabled { color:#9daab2; border-color:#dbe4e8; cursor:not-allowed; } .chart { height:315px; width:100%; }
+    .empty { background:white; border:1px solid var(--line); border-radius:12px; padding:42px 24px; text-align:center; color:var(--muted); } .foot { max-width:1180px; padding:0 22px 25px; margin:auto; color:#81909c; font-size:.78rem; }
+    @media(max-width:720px){ .drop { align-items:flex-start; flex-direction:column; } .file-tools { align-items:stretch; } .scope { max-width:none; width:100%; } .kpis { grid-template-columns:repeat(2,1fr); } .grid { grid-template-columns:1fr; } .chart-card.wide { grid-column:auto; } .hero { padding-top:26px; } .chart { height:285px; } }
+  </style>
+</head>
+<body>
+  <header class="hero"><div class="eyebrow">WORK NATURE & QUALITY ANALYTICS</div><h1>待辦事項工作性質及質量分析</h1><p>拖曳多份 CSV，即時比較每位同仁或不同工作範疇的工作結構、規劃執行與工作量週期。</p></header>
+  <section class="upload"><div class="drop" id="dropZone"><div><strong>拖曳或匯入待辦事項 CSV</strong><span>可一次選取多份檔案；支援標準 10 欄待辦事項 CSV，資料僅在本機瀏覽器分析。</span></div><label class="button" for="csvFile">選擇 CSV 檔</label><input id="csvFile" type="file" accept=".csv,text/csv" multiple /></div></section>
+  <div class="file-tools"><div class="status" id="status">請拖曳或選擇一份以上 CSV 檔案開始分析。</div><select class="scope" id="dataScope" aria-label="選擇分析資料範圍" disabled><option value="all">全部匯入檔案（合併分析）</option></select></div><div class="file-list" id="fileList" aria-live="polite"></div>
+  <main>
+    <nav class="tabs" aria-label="分析頁籤"><button class="tab active" data-tab="nature">工作類型與優先度</button><button class="tab" data-tab="quality">預規劃與準時性</button><button class="tab" data-tab="load">工作量與淡旺季</button></nav>
+    <section class="panel active" id="nature"><p class="intro">從「工作類別 → 優先順序」逐層探鑽。點選圖中的工作類別查看其優先度組成，再以「返回上一層」回到全部工作類別。</p><div class="kpis" id="natureKpis"></div><div class="grid"><article class="chart-card"><h2 class="chart-title">工作類別 × 優先順序</h2><p class="chart-note">第一層為工作類別；點選任一類別進入第二層的高中低優先度。</p><div class="drillbar"><span class="breadcrumb" id="drillPath">目前層級：全部工作類別</span><button class="back-button" id="drillBack" type="button" disabled>← 返回上一層</button></div><div class="chart" id="sunburst"></div></article><article class="chart-card"><h2 class="chart-title">各類工作優先順序組成</h2><p class="chart-note">比較不同工作類別的處理急迫度。</p><div class="chart" id="priorityBar"></div></article></div></section>
+    <section class="panel" id="quality"><p class="intro">以完工日與預計完成日評估交付準時性；以建立日至預計完成日，衡量預留的規劃天數。</p><div class="kpis" id="qualityKpis"></div><div class="grid"><article class="chart-card"><h2 class="chart-title">交付準時性</h2><p class="chart-note">僅計入具有預計與實際完工日期的任務。</p><div class="chart" id="punctualPie"></div></article><article class="chart-card"><h2 class="chart-title">計畫差異分布</h2><p class="chart-note">正值為逾期天數；負值表示提前完成。</p><div class="chart" id="varianceBar"></div></article><article class="chart-card wide"><h2 class="chart-title">規劃時間與實際工期</h2><p class="chart-note">每點代表一項任務：橫軸為從建立到預計完成的預留天數，縱軸為開工到完工的實際工期。</p><div class="chart" id="planningScatter"></div></article></div></section>
+    <section class="panel" id="load"><p class="intro">依建立月份觀察任務流入量與估算工時；若資料橫跨不足三個月份，淡旺季解讀應保守。</p><div class="kpis" id="loadKpis"></div><div class="grid"><article class="chart-card wide"><h2 class="chart-title">每月工作量</h2><p class="chart-note">柱狀為任務數；折線為具有開、完工時間任務的累計工時。</p><div class="chart" id="monthlyLoad"></div></article><article class="chart-card"><h2 class="chart-title">工作狀態</h2><p class="chart-note">觀察尚未完成或執行中的工作比例。</p><div class="chart" id="statusPie"></div></article><article class="chart-card"><h2 class="chart-title">各類別累計工時</h2><p class="chart-note">依開工至完工時間估算；缺日期的任務不納入。</p><div class="chart" id="hoursBar"></div></article></div></section>
+  </main><footer class="foot">資料僅在本機瀏覽器內解析，不會上傳。日期與工時以 CSV 欄位為準；未完成任務不納入準時性與工時統計。</footer>
+<script>
+(() => {
+  const charts = {}; let records = []; let importedFiles = []; let drillCategory = null;
+  const palette = { '高':'#dc5a5a','中':'#ee9b42','低':'#3c78c4','未填':'#aebbc4' };
+  const required = ['任務名稱','工作類別','優先順序','工作狀態','建立日期','預計完成日期','開工日期時間','完工日期時間'];
+  const by = (arr,key) => arr.reduce((o,x) => { const k=typeof key==='function'?key(x):x[key]; (o[k]??=[]).push(x); return o; },{});
+  const n = x => Number.isFinite(x) ? x : null;
+  const date = v => { if(!v) return null; const d=new Date(String(v).replace(/-/g,'/')); return Number.isNaN(d.getTime())?null:d; };
+  const diffDays = (a,b) => a&&b ? (b-a)/86400000 : null;
+  const hour = r => { const d=diffDays(date(r['開工日期時間']),date(r['完工日期時間'])); return d===null||d<0?null:d*24; };
+  const day = r => diffDays(date(r['預計完成日期']),date(r['完工日期時間']));
+  const planDays = r => diffDays(date(r['建立日期']),date(r['預計完成日期']));
+  const esc = s => String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  function parseCSV(t){ const rows=[]; let row=[],cell='',q=false; t=t.replace(/^\uFEFF/,''); for(let i=0;i<t.length;i++){const c=t[i],nx=t[i+1]; if(c==='"'){if(q&&nx==='"'){cell+='"';i++;}else q=!q;}else if(c===','&&!q){row.push(cell.trim());cell='';}else if((c==='\n'||c==='\r')&&!q){if(c==='\r'&&nx==='\n')i++;row.push(cell.trim()); if(row.some(v=>v!==''))rows.push(row);row=[];cell='';}else cell+=c;} row.push(cell.trim()); if(row.some(v=>v!==''))rows.push(row); const heads=rows.shift()||[]; return rows.map(r=>Object.fromEntries(heads.map((h,i)=>[h,r[i]??'']))); }
+  function renderFiles(selected='all'){
+    const scope=document.getElementById('dataScope'), list=document.getElementById('fileList');
+    scope.disabled=!importedFiles.length;
+    scope.innerHTML='<option value="all">全部匯入檔案（合併分析）</option>'+importedFiles.map((f,i)=>`<option value="${i}">${esc(f.name)}（${f.rows.length} 項）</option>`).join('');
+    scope.value=[...scope.options].some(o=>o.value===selected)?selected:'all';
+    list.innerHTML=importedFiles.map((f,i)=>`<span class="file-chip" title="${esc(f.name)}：${f.rows.length} 項任務">${esc(f.name)} <button type="button" data-remove="${i}" aria-label="移除 ${esc(f.name)}">×</button></span>`).join('');
+    list.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',()=>{ importedFiles.splice(+b.dataset.remove,1); refreshScope(); }));
+  }
+  function refreshScope(){
+    const scope=document.getElementById('dataScope'); renderFiles(scope.value);
+    const selected=scope.value; records=selected==='all'?importedFiles.flatMap(f=>f.rows):importedFiles[+selected]?.rows||[];
+    const names=selected==='all'?importedFiles.map(f=>f.name).join('、'):importedFiles[+selected]?.name||'';
+    drillCategory=null;
+    document.getElementById('status').innerHTML=records.length?`正在分析 <strong>${esc(names)}</strong>，共 ${records.length} 筆任務。可利用右側選單切換個別 CSV 或合併檢視。`:'請拖曳或選擇一份以上 CSV 檔案開始分析。';
+    draw();
+  }
+  async function loadFiles(files){
+    const accepted=[]; const rejected=[];
+    for(const file of [...files]){
+      if(!/\.csv$/i.test(file.name)){rejected.push(file.name);continue;}
+      const rows=parseCSV(await file.text()); const headers=Object.keys(rows[0]||{});
+      if(!rows.length){rejected.push(`${file.name}（沒有資料列）`);continue;}
+      const missing=required.filter(h=>!headers.includes(h));
+      accepted.push({name:file.name,rows:rows.map(r=>({...r,'資料來源':file.name})),missing});
+    }
+    if(!accepted.length){document.getElementById('status').textContent=`未載入有效 CSV${rejected.length?`：${rejected.join('、')}`:''}。`;return;}
+    const priorScope=document.getElementById('dataScope').value;
+    importedFiles.push(...accepted); renderFiles(priorScope);
+    refreshScope();
+    const incomplete=accepted.filter(f=>f.missing.length);
+    if(incomplete.length) document.getElementById('status').innerHTML+=` <span>部分欄位不足：${incomplete.map(f=>`${esc(f.name)}（${esc(f.missing.join('、'))}）`).join('；')}；相關指標會略過缺少資料。</span>`;
+    if(rejected.length) document.getElementById('status').innerHTML+=` <span>未載入：${esc(rejected.join('、'))}。</span>`;
+  }
+  function kpis(id, items){ document.getElementById(id).innerHTML=items.map(x=>`<div class="kpi"><b>${esc(x.label)}</b><strong>${esc(x.value)}</strong>${x.suffix?`<small>${esc(x.suffix)}</small>`:''}</div>`).join(''); }
+  function init(id){ charts[id]?.dispose(); charts[id]=echarts.init(document.getElementById(id)); return charts[id]; }
+  function noData(){ document.querySelectorAll('.chart').forEach(el=>{charts[el.id]?.dispose(); el.innerHTML='';}); ['natureKpis','qualityKpis','loadKpis'].forEach(id=>document.getElementById(id).innerHTML=''); }
+  function optionBase(){ return { textStyle:{fontFamily:'Microsoft JhengHei, Noto Sans TC, sans-serif',color:'#445563'}, tooltip:{trigger:'item',backgroundColor:'#17334adf',textStyle:{color:'#fff'}}, animationDuration:550 }; }
+  function draw(){ if(!records.length){noData();return;} drawNature(); drawQuality(); drawLoad(); Object.values(charts).forEach(c=>c.resize()); }
+  function drawNature(){
+    const cats=by(records,r=>r['工作類別']||'未填'); const pri=by(records,r=>r['優先順序']||'未填'); const top=Object.entries(cats).sort((a,b)=>b[1].length-a[1].length)[0];
+    kpis('natureKpis',[{label:'總任務數',value:records.length,suffix:'項'},{label:'主要工作類別',value:top?.[0]||'—',suffix:top?`${top[1].length} 項`:''},{label:'高優先任務',value:(pri['高']||[]).length,suffix:'項'},{label:'高＋中優先占比',value:Math.round(((pri['高']||[]).length+(pri['中']||[]).length)/records.length*100),suffix:'%'}]);
+    const allSun=Object.entries(cats).map(([cat,rs]) => ({
+      name:cat, value:rs.length,
+      children:Object.entries(by(rs,r=>r['優先順序']||'未填')).map(([p,a]) => ({
+        name:p, value:a.length, itemStyle:{color:palette[p]||palette['未填']}
+      }))
+    }));
+    if(drillCategory&&!cats[drillCategory]) drillCategory=null;
+    const sun=drillCategory?allSun.filter(x=>x.name===drillCategory):allSun;
+    document.getElementById('drillPath').textContent=drillCategory?`目前層級：全部工作類別 ＞ ${drillCategory} ＞ 優先順序`:'目前層級：全部工作類別';
+    document.getElementById('drillBack').disabled=!drillCategory;
+    const sunChart=init('sunburst'); sunChart.setOption({...optionBase(),series:[{type:'sunburst',data:sun,radius:[0,'88%'],sort:null,nodeClick:false,label:{rotate:'radial',fontSize:11},levels:[{}, {r0:'0%',r:'42%',label:{rotate:0,fontWeight:'bold'},itemStyle:{borderColor:'#fff',borderWidth:2}}, {r0:'44%',r:'83%',label:{rotate:'tangential'},itemStyle:{borderColor:'#fff',borderWidth:2}}]}]});
+    sunChart.on('click',params=>{const path=params.treePathInfo||[]; const category=path.find(x=>cats[x.name])?.name; if(category&&!drillCategory){drillCategory=category; drawNature();}});
+    const names=Object.keys(cats); init('priorityBar').setOption({...optionBase(),legend:{top:4},grid:{left:42,right:12,bottom:44,top:37},xAxis:{type:'category',data:names,axisLabel:{interval:0,rotate:names.length>5?26:0}},yAxis:{type:'value',minInterval:1},series:['高','中','低','未填'].map(p=>({name:p,type:'bar',stack:'all',data:names.map(c=>(by(cats[c],r=>r['優先順序']||'未填')[p]||[]).length),itemStyle:{color:palette[p]}}))});
+  }
+  function drawQuality(){
+    const assessed=records.filter(r=>day(r)!==null), late=assessed.filter(r=>day(r)>0), early=assessed.filter(r=>day(r)<=0), avgPlan=records.map(planDays).filter(x=>x!==null); const average=a=>a.length?a.reduce((s,x)=>s+x,0)/a.length:0;
+    kpis('qualityKpis',[{label:'可評估完工任務',value:assessed.length,suffix:'項'},{label:'準時／提前完成率',value:assessed.length?Math.round(early.length/assessed.length*100):'—',suffix:assessed.length?'%':''},{label:'平均逾期天數',value:late.length?average(late.map(day)).toFixed(1):0,suffix:'日'},{label:'平均預留規劃時間',value:avgPlan.length?average(avgPlan).toFixed(1):'—',suffix:avgPlan.length?'日':''}]);
+    init('punctualPie').setOption({...optionBase(),legend:{bottom:5},series:[{type:'pie',radius:['48%','72%'],avoidLabelOverlap:true,label:{formatter:'{b}\n{c} 項'},data:[{name:'準時／提前',value:early.length,itemStyle:{color:'#0d8b8a'}},{name:'逾期',value:late.length,itemStyle:{color:'#dc5a5a'}},{name:'資料不足',value:records.length-assessed.length,itemStyle:{color:'#ccd6dc'}}]}]});
+    const taskDiff=assessed.sort((a,b)=>day(a)-day(b)); init('varianceBar').setOption({...optionBase(),grid:{left:46,right:18,bottom:65,top:25},xAxis:{type:'category',data:taskDiff.map(r=>r['任務編號']||r['任務名稱']),axisLabel:{rotate:35}},yAxis:{type:'value',name:'天',axisLabel:{formatter:'{value}'}},series:[{type:'bar',data:taskDiff.map(r=>({value:+day(r).toFixed(1),itemStyle:{color:day(r)>0?'#dc5a5a':'#0d8b8a'}})),markLine:{silent:true,data:[{yAxis:0}]}}]});
+    const scatter=records.map(r=>[planDays(r),diffDays(date(r['開工日期時間']),date(r['完工日期時間'])),r['任務名稱']]).filter(x=>x[0]!==null&&x[1]!==null); init('planningScatter').setOption({...optionBase(),grid:{left:48,right:25,bottom:42,top:24},xAxis:{type:'value',name:'預留規劃日',nameLocation:'middle',nameGap:29},yAxis:{type:'value',name:'實際工期（日）',nameLocation:'middle',nameGap:37},series:[{type:'scatter',symbolSize:12,data:scatter,itemStyle:{color:'#3c78c4'},tooltip:{formatter:p=>`${esc(p.data[2])}<br>預留：${p.data[0].toFixed(1)} 日<br>實際：${p.data[1].toFixed(1)} 日`}}]});
+  }
+  function drawLoad(){
+    const months=by(records,r=>{const d=date(r['建立日期']);return d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`:'未填';}); const ms=Object.keys(months).sort(); const avg=ms.length?records.length/ms.length:0; const peak=ms.map(m=>[m,months[m].length]).sort((a,b)=>b[1]-a[1])[0]; const complete=records.filter(r=>String(r['工作狀態']).includes('完成')).length;
+    kpis('loadKpis',[{label:'涵蓋月份',value:ms.length,suffix:'個月'},{label:'月均新增任務',value:avg.toFixed(1),suffix:'項'},{label:'工作量高峰',value:peak?.[0]||'—',suffix:peak?`${peak[1]} 項`:''},{label:'已完成比率',value:Math.round(complete/records.length*100),suffix:'%'}]);
+    init('monthlyLoad').setOption({...optionBase(),legend:{top:0},grid:{left:44,right:46,bottom:36,top:32},xAxis:{type:'category',data:ms},yAxis:[{type:'value',name:'任務數',minInterval:1},{type:'value',name:'工時'}],series:[{name:'新增任務',type:'bar',data:ms.map(m=>months[m].length),itemStyle:{color:'#3c78c4',borderRadius:[4,4,0,0]}},{name:'累計工時',type:'line',yAxisIndex:1,smooth:true,data:ms.map(m=>months[m].map(hour).filter(x=>x!==null).reduce((a,b)=>a+b,0)),itemStyle:{color:'#ee8b43'},lineStyle:{width:3}}]});
+    const sts=by(records,r=>r['工作狀態']||'未填');
+    init('statusPie').setOption({...optionBase(),legend:{bottom:2},series:[{
+      type:'pie', radius:['35%','70%'], label:{formatter:'{b}\n{c} 項'},
+      data:Object.entries(sts).map(([name,a],i) => ({
+        name, value:a.length, itemStyle:{color:['#0d8b8a','#ee9b42','#dc5a5a','#aebbc4'][i%4]}
+      }))
+    }]});
+    const cats=by(records,r=>r['工作類別']||'未填'); const ar=Object.entries(cats).map(([name,a])=>[name,a.map(hour).filter(x=>x!==null).reduce((s,x)=>s+x,0)]).sort((a,b)=>a[1]-b[1]); init('hoursBar').setOption({...optionBase(),grid:{left:94,right:18,bottom:30,top:20},xAxis:{type:'value',name:'工時'},yAxis:{type:'category',data:ar.map(x=>x[0])},series:[{type:'bar',data:ar.map(x=>x[1]),itemStyle:{color:'#0d8b8a',borderRadius:[0,4,4,0]},label:{show:true,position:'right',formatter:p=>p.value.toFixed(0)}}]});
+  }
+  document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.panel').forEach(x=>x.classList.toggle('active',x.id===b.dataset.tab));setTimeout(()=>Object.values(charts).forEach(c=>c.resize()),40);}));
+  document.getElementById('csvFile').addEventListener('change',async e=>{await loadFiles(e.target.files); e.target.value='';});
+  document.getElementById('dataScope').addEventListener('change',refreshScope);
+  document.getElementById('drillBack').addEventListener('click',()=>{if(drillCategory){drillCategory=null;drawNature();}});
+  const dropZone=document.getElementById('dropZone'); ['dragenter','dragover'].forEach(type=>dropZone.addEventListener(type,e=>{e.preventDefault();dropZone.classList.add('dragover');})); ['dragleave','drop'].forEach(type=>dropZone.addEventListener(type,e=>{e.preventDefault();dropZone.classList.remove('dragover');})); dropZone.addEventListener('drop',e=>loadFiles(e.dataTransfer.files));
+  window.addEventListener('resize',()=>Object.values(charts).forEach(c=>c.resize()));
+})();
+</script>
+</body></html>
